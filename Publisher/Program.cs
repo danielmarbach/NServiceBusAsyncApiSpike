@@ -29,7 +29,7 @@ builder.Services.AddAsyncApiSchemaGeneration(options =>
 builder.Host.UseNServiceBus(context =>
 {
     var endpointConfiguration = new EndpointConfiguration("Publisher");
-    var transport = endpointConfiguration.UseTransport<LearningTransport>();
+    endpointConfiguration.UseTransport<LearningTransport>();
 
     endpointConfiguration.EnableAsyncApiSupport();
     return endpointConfiguration;
