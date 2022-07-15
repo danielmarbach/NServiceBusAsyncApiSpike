@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using NServiceBus;
 using NServiceBus.Features;
+using NServiceBus.Unicast;
 using NServiceBus.Unicast.Messages;
 
 namespace Infrastructure;
