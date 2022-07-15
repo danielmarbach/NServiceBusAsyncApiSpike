@@ -1,9 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NJsonSchema.Generation;
-using NServiceBus;
-using NServiceBus.Settings;
-using NServiceBus.Unicast.Messages;
 using Saunter;
 using Saunter.AsyncApiSchema.v2;
 using Saunter.Generation;
@@ -15,9 +12,9 @@ namespace Infrastructure;
 
 class ApiDocumentGenerator : IDocumentGenerator
 {
-    private readonly Dictionary<Type, PublishedEvent> publishedEvents;
+    private readonly Dictionary<Type, Type> publishedEvents;
 
-    public ApiDocumentGenerator(Dictionary<Type, PublishedEvent> publishedEvents)
+    public ApiDocumentGenerator(Dictionary<Type, Type> publishedEvents)
     {
         this.publishedEvents = publishedEvents;
     }
@@ -50,13 +47,13 @@ class ApiDocumentGenerator : IDocumentGenerator
         return channels;
     }
 
-    IDictionary<string, ChannelItem> GenerateEventChannels(IEnumerable<(Type Key, PublishedEvent Value)> eventTypes, AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator schemaGenerator)
+    IDictionary<string, ChannelItem> GenerateEventChannels(IEnumerable<(Type Key, Type Value)> eventTypes, AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator schemaGenerator)
     {
         var publishChannels = new Dictionary<string, ChannelItem>();
-        foreach (var (eventType, attribute) in eventTypes)
+        foreach (var (eventType, publishedType) in eventTypes)
         {
             // TODO: Is there a better way to handle the version?
-            var operationId = $"{attribute.EventName}V{attribute.Version}";
+            var operationId = publishedType.FullName;
             var subscribeOperation = new Operation
             {
                 OperationId = operationId,

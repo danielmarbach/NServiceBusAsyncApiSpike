@@ -6,9 +6,9 @@ namespace Infrastructure;
 class ReplaceOutgoingEnclosedMessageTypeHeaderBehavior : IBehavior<IOutgoingPhysicalMessageContext,
     IOutgoingPhysicalMessageContext>
 {
-    private Dictionary<Type, PublishedEvent> publishedEventCache;
+    private Dictionary<Type, Type> publishedEventCache;
 
-    public ReplaceOutgoingEnclosedMessageTypeHeaderBehavior(Dictionary<Type, PublishedEvent> publishedEventCache)
+    public ReplaceOutgoingEnclosedMessageTypeHeaderBehavior(Dictionary<Type, Type> publishedEventCache)
     {
         this.publishedEventCache = publishedEventCache;
     }
@@ -19,7 +19,7 @@ class ReplaceOutgoingEnclosedMessageTypeHeaderBehavior : IBehavior<IOutgoingPhys
         if (publishedEventCache.TryGetValue(logicalMessage.MessageType, out var publishedEvent))
         {
             // very blunt and might break with certain transports
-            context.Headers[Headers.EnclosedMessageTypes] = $"{publishedEvent.EventName}V{publishedEvent.Version}";
+            context.Headers[Headers.EnclosedMessageTypes] = publishedEvent.FullName;
         }
 
         return next(context);
