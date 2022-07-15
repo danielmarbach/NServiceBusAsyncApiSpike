@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddTransient<IDocumentGenerator, ApiDocumentGenerator>();
 builder.Services.AddAsyncApiSchemaGeneration(options =>
 {
     options.AsyncApi = new AsyncApiDocument

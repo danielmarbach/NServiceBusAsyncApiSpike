@@ -1,6 +1,6 @@
 using Infrastructure;
 
-[PublishedEvent(EventName = "SomeEvent", Version = 1)]
+[PublishedEvent(EventName = "SomeNamespace.SomeEvent", Version = 1)]
 class SomeEventThatIsBeingPublished
 {
     public string SomeValue { get; init; }

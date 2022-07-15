@@ -13,6 +13,8 @@ await Host.CreateDefaultBuilder(args)
         endpointConfiguration.UseTransport<LearningTransport>();
 
         endpointConfiguration.EnableAsyncApiSupport();
+
+        endpointConfiguration.EnableInstallers();
         return endpointConfiguration;
     })
     .Build()

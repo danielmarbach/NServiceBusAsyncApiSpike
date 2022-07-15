@@ -10,13 +10,13 @@ using Saunter.Utils;
 
 namespace Infrastructure;
 
-class ApiDocumentGenerator : IDocumentGenerator
+public class ApiDocumentGenerator : IDocumentGenerator
 {
-    private readonly Dictionary<Type, Type> publishedEvents;
+    private IServiceProvider serviceProvider;
 
-    public ApiDocumentGenerator(Dictionary<Type, Type> publishedEvents)
+    public ApiDocumentGenerator(IServiceProvider serviceProvider)
     {
-        this.publishedEvents = publishedEvents;
+        this.serviceProvider = serviceProvider;
     }
 
     public AsyncApiDocument GenerateDocument(TypeInfo[] asyncApiTypes, AsyncApiOptions options, AsyncApiDocument prototype,
@@ -41,16 +41,18 @@ class ApiDocumentGenerator : IDocumentGenerator
 
     IDictionary<string, ChannelItem> GenerateChannels(AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator schemaGenerator)
     {
+        // Need to resolve here the feature specific type because of ordering issues with Saunter
+        var typeCache = serviceProvider.GetRequiredService<TypeCache>();
         var channels = new Dictionary<string, ChannelItem>();
 
-        channels.AddRange(GenerateEventChannels(publishedEvents.Select(kvp => (kvp.Key, kvp.Value)), schemaResolver, schemaGenerator));
+        channels.AddRange(GenerateEventChannels(typeCache.PublishedEventCache.Select(kvp => (kvp.Key, kvp.Value)), schemaResolver, schemaGenerator));
         return channels;
     }
 
     IDictionary<string, ChannelItem> GenerateEventChannels(IEnumerable<(Type Key, Type Value)> eventTypes, AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator schemaGenerator)
     {
         var publishChannels = new Dictionary<string, ChannelItem>();
-        foreach (var (eventType, publishedType) in eventTypes)
+        foreach (var (actualType, publishedType) in eventTypes)
         {
             // TODO: Is there a better way to handle the version?
             var operationId = publishedType.FullName;
@@ -59,13 +61,13 @@ class ApiDocumentGenerator : IDocumentGenerator
                 OperationId = operationId,
                 Summary = string.Empty,
                 Description = string.Empty,
-                Message = GenerateMessageFromType(eventType, schemaResolver, schemaGenerator),
+                Message = GenerateMessageFromType(actualType, publishedType, schemaResolver, schemaGenerator),
                 Bindings = null,
             };
 
             var channelItem = new ChannelItem
             {
-                Description = eventType.FullName,
+                Description = actualType.FullName,
                 Parameters = new Dictionary<string, IParameter>(),
                 Publish = null,
                 Subscribe = subscribeOperation,
@@ -79,13 +81,14 @@ class ApiDocumentGenerator : IDocumentGenerator
         return publishChannels;
     }
 
-    private static Saunter.AsyncApiSchema.v2.IMessage GenerateMessageFromType(Type payloadType, AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator jsonSchemaGenerator)
+    private static IMessage GenerateMessageFromType(Type actualType, Type publishedType,
+        AsyncApiSchemaResolver schemaResolver, JsonSchemaGenerator jsonSchemaGenerator)
     {
         var message = new Message
         {
-            Payload = jsonSchemaGenerator.Generate(payloadType, schemaResolver),
+            Payload = jsonSchemaGenerator.Generate(actualType, schemaResolver),
             // TODO Should this also use the operation id?
-            Name = payloadType.FullName
+            Name = publishedType.FullName
         };
 
         return schemaResolver.GetMessageOrReference(message);
